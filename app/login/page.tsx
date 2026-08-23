@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { FaLock, FaUser, FaEye, FaEyeSlash, FaSignInAlt } from 'react-icons/fa'
+import ApiService from '@/services/api'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -19,23 +20,17 @@ export default function LoginPage() {
     setError('')
 
     try {
-      // Simulasi API call untuk login
-      // Ganti dengan API call ke backend
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      const response = await ApiService.login(username, password)
 
-      // Dummy credentials - Ganti dengan validasi dari backend
-      const validUsername = 'admin'
-      const validPassword = 'admin123'
-
-      if (username === validUsername && password === validPassword) {
-        // Simpan token di localStorage
-        localStorage.setItem('adminToken', 'dummy-token-123')
-        localStorage.setItem('adminUsername', username)
+      if (response.success) {
+        const { token, user } = response.data
         
-        // Redirect ke dashboard admin
+        localStorage.setItem('adminToken', token)
+        localStorage.setItem('adminUsername', user.username || username)
+        
         router.push('/admin')
       } else {
-        setError('Invalid username or password')
+        setError(response.message || 'Invalid username or password')
       }
     } catch (err) {
       setError('Login failed. Please try again.')
@@ -46,7 +41,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8 pt-20">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -120,22 +115,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                />
-                <label htmlFor="remember" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                  Remember me
-                </label>
-              </div>
-              <a href="#" className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">
-                Forgot password?
-              </a>
-            </div>
-
             <button
               type="submit"
               disabled={isLoading}
@@ -157,12 +136,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Demo credentials: admin / admin123
-            </p>
-          </div>
         </div>
       </motion.div>
     </div>

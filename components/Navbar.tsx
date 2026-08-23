@@ -2,14 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { FaBars, FaTimes, FaMoon, FaSun } from 'react-icons/fa'
+import { usePathname, useRouter } from 'next/navigation'
+import { FaBars, FaTimes, FaMoon, FaSun, FaSignOutAlt, FaSignInAlt } from 'react-icons/fa'
 import { useTheme } from './ThemeProvider'
+import ApiService from '@/services/api'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [logoText, setLogoText] = useState('')
   const pathname = usePathname()
+  const router = useRouter()
   const { theme, toggleTheme } = useTheme()
 
   useEffect(() => {
@@ -19,6 +23,55 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  useEffect(() => {
+    // Check login status
+    const token = localStorage.getItem('adminToken')
+    setIsLoggedIn(!!token)
+  }, [pathname])
+
+  useEffect(() => {
+    fetchProfile()
+  }, [])
+
+  const fetchProfile = async () => {
+    try {
+      const response = await ApiService.getPortfolio()
+      
+      if (response.success && response.data && response.data.profile) {
+        const profile = response.data.profile
+        // Buat logo text dari inisial nama
+        const initials = profile.name
+          .split(' ')
+          .map((word: string) => word[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase()
+        
+        setLogoText(initials || 'P')
+      }
+    } catch (error) {
+      console.error('Error fetching profile for navbar:', error)
+      setLogoText('P')
+    }
+  }
+
+  const handleLogout = async () => {
+    const token = localStorage.getItem('adminToken')
+    
+    if (token) {
+      try {
+        await ApiService.logout(token)
+      } catch (error) {
+        console.error('Logout error:', error)
+      }
+    }
+    
+    localStorage.removeItem('adminToken')
+    localStorage.removeItem('adminUsername')
+    setIsLoggedIn(false)
+    router.push('/')
+  }
 
   const navItems = [
     { label: 'Home', href: '/' },
@@ -39,7 +92,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <Link href="/" className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
-              AF
+              {logoText || 'P'}
             </Link>
           </div>
 
@@ -58,6 +111,7 @@ export default function Navbar() {
                 {item.label}
               </Link>
             ))}
+            
             <button
               onClick={toggleTheme}
               className="ml-3 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -65,12 +119,32 @@ export default function Navbar() {
             >
               {theme === 'light' ? <FaMoon /> : <FaSun />}
             </button>
-            <Link
-                href="/login"
-                className="ml-2 bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors"
+
+            {isLoggedIn ? (
+              <>
+                <Link
+                  href="/admin"
+                  className="ml-2 bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors"
                 >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="ml-2 bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition-colors flex items-center"
+                >
+                  <FaSignOutAlt className="mr-1" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="ml-2 bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center"
+              >
+                <FaSignInAlt className="mr-1" />
                 Login
-            </Link>
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -111,13 +185,35 @@ export default function Navbar() {
                 {item.label}
               </Link>
             ))}
-            <Link
+            
+            {isLoggedIn ? (
+              <>
+                <Link
+                  href="/admin"
+                  className="block bg-indigo-600 text-white px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-700 transition-colors mt-2"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout()
+                    setIsOpen(false)
+                  }}
+                  className="block w-full text-left bg-red-600 text-white px-3 py-2 rounded-md text-base font-medium hover:bg-red-700 transition-colors mt-2"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
                 href="/login"
                 className="block bg-indigo-600 text-white px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-700 transition-colors mt-2"
                 onClick={() => setIsOpen(false)}
-                >
+              >
                 Login
-            </Link>
+              </Link>
+            )}
           </div>
         </div>
       )}

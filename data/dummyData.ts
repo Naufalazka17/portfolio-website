@@ -2,9 +2,9 @@ import { PortfolioData } from '@/types';
 
 export const dummyData: PortfolioData = {
   profile: {
-    name: "Ahmad Fauzi",
+    name: "Naufal Azka",
     title: "Full Stack Developer",
-    email: "ahmad.fauzi@email.com",
+    email: "naufalazkapu@email.com",
     phone: "+62 812-3456-7890",
     location: "Jakarta, Indonesia",
     bio: "Passionate Full Stack Developer dengan pengalaman 5+ tahun dalam membangun aplikasi web modern. Spesialisasi dalam React, Node.js, dan cloud services.",

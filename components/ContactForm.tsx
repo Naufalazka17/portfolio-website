@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ContactMessage } from '@/types'
+import ApiService from '@/services/api'
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({
@@ -13,6 +13,7 @@ export default function ContactForm() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -26,30 +27,28 @@ export default function ContactForm() {
     e.preventDefault()
     setIsSubmitting(true)
     setSubmitStatus('idle')
+    setErrorMessage('')
 
     try {
-      // Ganti dengan API call ke backend
-      // const response = await fetch('/api/contact', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // })
+      const response = await ApiService.createMessage(formData)
       
-      // Simulasi API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      console.log('Form submitted:', formData)
-      
-      setSubmitStatus('success')
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: ''
-      })
+      if (response.success) {
+        setSubmitStatus('success')
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: ''
+        })
+      } else {
+        setSubmitStatus('error')
+        setErrorMessage(response.message || 'Failed to send message. Please try again.')
+      }
     } catch (error) {
       console.error('Error submitting form:', error)
       setSubmitStatus('error')
+      setErrorMessage('Network error. Please try again later.')
     } finally {
       setIsSubmitting(false)
     }
@@ -146,7 +145,7 @@ export default function ContactForm() {
 
       {submitStatus === 'error' && (
         <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-md">
-          Failed to send message. Please try again later.
+          {errorMessage || 'Failed to send message. Please try again later.'}
         </div>
       )}
 

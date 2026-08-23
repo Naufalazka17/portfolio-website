@@ -4,12 +4,13 @@ import './globals.css'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import ThemeProvider from '@/components/ThemeProvider'
+import ApiService from '@/services/api'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Portfolio - Ahmad Fauzi',
-  description: 'Full Stack Developer Portfolio',
+  title: 'Portfolio',
+  description: 'Personal Portfolio Website',
 }
 
 export default function RootLayout({

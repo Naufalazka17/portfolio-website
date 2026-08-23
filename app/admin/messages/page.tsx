@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FaEnvelope, FaEnvelopeOpen, FaReply, FaTrash, FaSearch, FaTimes } from 'react-icons/fa'
+import { FaEnvelope, FaEnvelopeOpen, FaReply, FaTrash, FaSearch, FaTimes, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
+import { useRouter } from 'next/navigation'
+import ApiService from '@/services/api'
 
 interface Message {
   id: string
@@ -11,79 +13,141 @@ interface Message {
   phone: string
   subject: string
   message: string
-  createdAt: string
-  isRead: boolean
+  created_at: string
+  is_read: boolean
 }
 
 export default function AdminMessagesPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      phone: '+62 812-3456-7890',
-      subject: 'Project Collaboration',
-      message: 'Hi, I would like to discuss a potential project about building a web application for my company. We need a full-featured e-commerce platform with payment gateway integration and inventory management system. Please let me know if you are available for a consultation call next week.',
-      createdAt: '2024-01-15T10:30:00',
-      isRead: false
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      phone: '+62 813-9876-5432',
-      subject: 'Job Opportunity',
-      message: 'We are looking for a senior developer to join our team. Your portfolio looks impressive and we think you would be a great fit for our company. We offer competitive salary and benefits.',
-      createdAt: '2024-01-14T14:20:00',
-      isRead: false
-    },
-    {
-      id: '3',
-      name: 'Bob Johnson',
-      email: 'bob@example.com',
-      phone: '+62 814-5555-7777',
-      subject: 'Consultation Request',
-      message: 'Need help with optimizing our existing application. We are experiencing performance issues and would love to schedule a consultation to discuss possible solutions.',
-      createdAt: '2024-01-13T09:15:00',
-      isRead: true
-    }
-  ])
-  
+  const router = useRouter()
+  const [messages, setMessages] = useState<Message[]>([])
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null)
   const [showReplyModal, setShowReplyModal] = useState(false)
   const [replyText, setReplyText] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all')
+  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState<any>(null)
+  const [actionLoading, setActionLoading] = useState(false)
+  const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null)
 
-  const unreadCount = messages.filter(m => !m.isRead).length
+  const unreadCount = messages.filter(m => !m.is_read).length
 
-  const handleMarkAsRead = (id: string) => {
+  useEffect(() => {
+    fetchMessages()
+  }, [page])
+
+  const fetchMessages = async () => {
+    const token = localStorage.getItem('adminToken')
+    
+    if (!token) {
+      router.push('/login')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await ApiService.getMessages(token, page, 10)
+      console.log('Fetch messages response:', response)
+      
+      if (response.success) {
+        // Backend menggunakan snake_case
+        const messagesData = response.data || []
+        setMessages(messagesData)
+        setPagination(response.pagination || null)
+      } else {
+        showNotification('error', response.message || 'Failed to load messages')
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error)
+      showNotification('error', 'Network error. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message })
+    setTimeout(() => setNotification(null), 3000)
+  }
+
+  const handleMarkAsRead = async (id: string) => {
+    const token = localStorage.getItem('adminToken')
+    if (!token) return
+
+    // Update local state dulu agar UI langsung berubah
     setMessages(prev => 
       prev.map(msg => 
-        msg.id === id ? { ...msg, isRead: true } : msg
+        String(msg.id) === String(id) ? { ...msg, is_read: true } : msg
       )
     )
-    if (selectedMessage?.id === id) {
-      setSelectedMessage({ ...selectedMessage, isRead: true })
+    if (selectedMessage && String(selectedMessage.id) === String(id)) {
+      setSelectedMessage(prev => prev ? { ...prev, is_read: true } : null)
+    }
+
+    // Kirim ke backend - PUT tanpa body
+    try {
+      const response = await ApiService.markAsRead(id, token)
+      console.log('Mark as read response:', response)
+      
+      if (!response.success) {
+        console.warn('Backend rejected mark as read:', response)
+      }
+    } catch (error) {
+      console.error('Error marking as read:', error)
+      // UI sudah diupdate, backend akan sync nanti
     }
   }
 
-  const handleDelete = (id: string) => {
-    setMessages(prev => prev.filter(msg => msg.id !== id))
-    if (selectedMessage?.id === id) {
-      setSelectedMessage(null)
+  const handleDelete = async (id: string) => {
+    const token = localStorage.getItem('adminToken')
+    if (!token) return
+
+    if (!confirm('Are you sure you want to delete this message?')) return
+
+    setActionLoading(true)
+    try {
+      const response = await ApiService.deleteMessage(id, token)
+      console.log('Delete response:', response)
+      
+      if (response.success) {
+        setMessages(prev => prev.filter(msg => String(msg.id) !== String(id)))
+        if (selectedMessage && String(selectedMessage.id) === String(id)) {
+          setSelectedMessage(null)
+        }
+        showNotification('success', 'Message deleted successfully')
+      } else {
+        showNotification('error', response.message || 'Failed to delete message')
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error)
+      showNotification('error', 'Failed to delete message')
+    } finally {
+      setActionLoading(false)
     }
   }
 
-  const handleReply = () => {
-    if (selectedMessage && replyText.trim()) {
-      // Here you would send the reply via email
-      console.log(`Replying to ${selectedMessage.email}: ${replyText}`)
-      const mailtoLink = `mailto:${selectedMessage.email}?subject=Re: ${selectedMessage.subject}&body=${encodeURIComponent(replyText)}`
-      window.location.href = mailtoLink
-      setShowReplyModal(false)
-      setReplyText('')
-      handleMarkAsRead(selectedMessage.id)
+  const handleReply = async () => {
+    const token = localStorage.getItem('adminToken')
+    if (!token || !selectedMessage || !replyText.trim()) return
+
+    setActionLoading(true)
+    try {
+      const response = await ApiService.replyToMessage(selectedMessage.id, replyText, token)
+      console.log('Reply response:', response)
+      
+      if (response.success) {
+        setShowReplyModal(false)
+        setReplyText('')
+        showNotification('success', 'Reply sent successfully!')
+      } else {
+        showNotification('error', response.message || 'Failed to send reply')
+      }
+    } catch (error) {
+      console.error('Error sending reply:', error)
+      showNotification('error', 'Failed to send reply. Please try again.')
+    } finally {
+      setActionLoading(false)
     }
   }
 
@@ -95,15 +159,56 @@ export default function AdminMessagesPage() {
     
     const matchesFilter = 
       filter === 'all' || 
-      (filter === 'unread' && !msg.isRead) || 
-      (filter === 'read' && msg.isRead)
+      (filter === 'unread' && !msg.is_read) || 
+      (filter === 'read' && msg.is_read)
     
     return matchesSearch && matchesFilter
   })
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Unknown date'
+    const date = new Date(dateString)
+    return date.toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  if (loading && messages.length === 0) {
+    return (
+      <div className="pt-16 min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading messages...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="pt-16 min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Notification */}
+        <AnimatePresence>
+          {notification && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className={`fixed top-20 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${
+                notification.type === 'success' 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-red-600 text-white'
+              }`}
+            >
+              {notification.message}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
@@ -112,6 +217,15 @@ export default function AdminMessagesPage() {
               <span className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium">
                 {unreadCount} unread
               </span>
+              <button
+                onClick={fetchMessages}
+                className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                title="Refresh"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
             </div>
           </div>
           
@@ -146,79 +260,112 @@ export default function AdminMessagesPage() {
         </div>
 
         {/* Messages List */}
-        <div className="space-y-4">
-          {filteredMessages.map((message) => (
-            <motion.div
-              key={message.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer ${
-                !message.isRead ? 'border-l-4 border-indigo-600 dark:border-indigo-400' : ''
-              }`}
-              onClick={() => {
-                setSelectedMessage(message)
-                handleMarkAsRead(message.id)
-              }}
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3 flex-1">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      message.isRead ? 'bg-gray-100 dark:bg-gray-700' : 'bg-indigo-100 dark:bg-indigo-900/30'
-                    }`}>
-                      {message.isRead ? (
-                        <FaEnvelopeOpen className="text-gray-500 dark:text-gray-400" />
-                      ) : (
-                        <FaEnvelope className="text-indigo-600 dark:text-indigo-400" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                          {message.name}
-                          {!message.isRead && (
-                            <span className="ml-2 inline-block w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full"></span>
-                          )}
-                        </h3>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(message.createdAt).toLocaleDateString()}
-                        </span>
+        {filteredMessages.length === 0 ? (
+          <div className="text-center py-12">
+            <FaEnvelope className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400">No messages found</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredMessages.map((message) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                  !message.is_read ? 'border-l-4 border-indigo-600 dark:border-indigo-400' : ''
+                }`}
+                onClick={() => {
+                  setSelectedMessage(message)
+                  if (!message.is_read) {
+                    handleMarkAsRead(message.id)
+                  }
+                }}
+              >
+                <div className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3 flex-1">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        message.is_read ? 'bg-gray-100 dark:bg-gray-700' : 'bg-indigo-100 dark:bg-indigo-900/30'
+                      }`}>
+                        {message.is_read ? (
+                          <FaEnvelopeOpen className="text-gray-500 dark:text-gray-400" />
+                        ) : (
+                          <FaEnvelope className="text-indigo-600 dark:text-indigo-400" />
+                        )}
                       </div>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">{message.email}</p>
-                      <p className="text-gray-900 dark:text-white font-medium mt-1">{message.subject}</p>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm mt-2 line-clamp-2">
-                        {message.message}
-                      </p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                            {message.name}
+                            {!message.is_read && (
+                              <span className="ml-2 inline-block w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full"></span>
+                            )}
+                          </h3>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            {formatDate(message.created_at)}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">{message.email}</p>
+                        <p className="text-gray-900 dark:text-white font-medium mt-1">{message.subject}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm mt-2 line-clamp-2">
+                          {message.message}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-2 ml-4">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedMessage(message)
-                        setShowReplyModal(true)
-                      }}
-                      className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
-                      title="Reply"
-                    >
-                      <FaReply />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDelete(message.id)
-                      }}
-                      className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <FaTrash />
-                    </button>
+                    <div className="flex items-center space-x-2 ml-4">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedMessage(message)
+                          setShowReplyModal(true)
+                        }}
+                        className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                        title="Reply"
+                      >
+                        <FaReply />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDelete(message.id)
+                        }}
+                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                        title="Delete"
+                        disabled={actionLoading}
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex justify-center items-center space-x-4 mt-8">
+            <button
+              onClick={() => setPage(prev => Math.max(prev - 1, 1))}
+              disabled={page === 1}
+              className="p-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FaChevronLeft />
+            </button>
+            <span className="text-gray-700 dark:text-gray-300">
+              Page {page} of {pagination.totalPages}
+            </span>
+            <button
+              onClick={() => setPage(prev => Math.min(prev + 1, pagination.totalPages))}
+              disabled={page === pagination.totalPages}
+              className="p-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FaChevronRight />
+            </button>
+          </div>
+        )}
 
         {/* Message Detail Modal */}
         <AnimatePresence>
@@ -256,7 +403,7 @@ export default function AdminMessagesPage() {
                           </p>
                         )}
                         <p className="text-gray-500 dark:text-gray-500 text-sm">
-                          {new Date(selectedMessage.createdAt).toLocaleString()}
+                          {formatDate(selectedMessage.created_at)}
                         </p>
                       </div>
                     </div>
@@ -284,6 +431,7 @@ export default function AdminMessagesPage() {
                     <button
                       onClick={() => handleDelete(selectedMessage.id)}
                       className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center"
+                      disabled={actionLoading}
                     >
                       <FaTrash className="mr-2" />
                       Delete
@@ -342,9 +490,10 @@ export default function AdminMessagesPage() {
                   <div className="mt-4 flex space-x-4">
                     <button
                       onClick={handleReply}
-                      className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                      disabled={actionLoading || !replyText.trim()}
+                      className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Send Reply
+                      {actionLoading ? 'Sending...' : 'Send Reply'}
                     </button>
                     <button
                       onClick={() => setShowReplyModal(false)}

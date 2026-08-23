@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { FaLock } from 'react-icons/fa'
+import ApiService from '@/services/api'
 
 interface AdminAuthProps {
   children: React.ReactNode
@@ -14,27 +14,36 @@ export default function AdminAuth({ children }: AdminAuthProps) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check authentication status
-    const checkAuth = () => {
+    const checkAuth = async () => {
       const token = localStorage.getItem('adminToken')
       
       if (!token) {
-        // Redirect to login if not authenticated
         router.push('/login')
-      } else {
-        setIsAuthenticated(true)
+        return
       }
+
+      try {
+        const response = await ApiService.verifyToken(token)
+        
+        if (response.success) {
+          setIsAuthenticated(true)
+        } else {
+          localStorage.removeItem('adminToken')
+          localStorage.removeItem('adminUsername')
+          router.push('/login')
+        }
+      } catch (error) {
+        console.error('Auth verification error:', error)
+        localStorage.removeItem('adminToken')
+        localStorage.removeItem('adminUsername')
+        router.push('/login')
+      }
+      
       setIsLoading(false)
     }
 
     checkAuth()
   }, [router])
-
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('adminUsername')
-    router.push('/login')
-  }
 
   if (isLoading) {
     return (
@@ -51,19 +60,5 @@ export default function AdminAuth({ children }: AdminAuthProps) {
     return null
   }
 
-  return (
-    <>
-      {/* Admin Header dengan Logout */}
-      <div className="fixed top-16 right-0 z-40">
-        <button
-          onClick={handleLogout}
-          className="m-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center"
-        >
-          <FaLock className="mr-2" />
-          Logout
-        </button>
-      </div>
-      {children}
-    </>
-  )
+  return <>{children}</>
 }

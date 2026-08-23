@@ -1,8 +1,41 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { dummyData } from '@/data/dummyData'
+import ApiService from '@/services/api'
+
+interface Profile {
+  name: string
+  title: string
+  email: string
+  phone: string
+  location: string
+}
 
 export default function Footer() {
-  const { profile } = dummyData
+  const [profile, setProfile] = useState<Profile>({
+    name: 'Loading...',
+    title: '',
+    email: '',
+    phone: '',
+    location: '',
+  })
+
+  useEffect(() => {
+    fetchProfile()
+  }, [])
+
+  const fetchProfile = async () => {
+    try {
+      const response = await ApiService.getPortfolio()
+      
+      if (response.success && response.data && response.data.profile) {
+        setProfile(response.data.profile)
+      }
+    } catch (error) {
+      console.error('Error fetching profile for footer:', error)
+    }
+  }
 
   return (
     <footer className="bg-gray-900 dark:bg-gray-950 text-white py-12">

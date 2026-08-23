@@ -1,15 +1,138 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { PortfolioData } from '@/types'
-import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaCode, FaMobileAlt, FaRocket } from 'react-icons/fa'
+import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaCode, FaMobileAlt, FaRocket, FaBriefcase, FaFolder, FaUsers, FaLink } from 'react-icons/fa'
+import ApiService from '@/services/api'
 
 interface AboutProps {
   data: PortfolioData
 }
 
+interface Service {
+  id: string
+  title: string
+  description: string
+  icon: string
+  display_order?: number
+}
+
+interface Stat {
+  id: string
+  value: string
+  label: string
+  display_order?: number
+}
+
+const iconMap: { [key: string]: any } = {
+  FaCode,
+  FaMobileAlt,
+  FaRocket,
+  FaBriefcase,
+  FaFolder,
+  FaUsers,
+  FaLink,
+}
+
 export default function About({ data }: AboutProps) {
   const { profile } = data
+  const [services, setServices] = useState<Service[]>([])
+  const [stats, setStats] = useState<Stat[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAboutData()
+  }, [])
+
+  const fetchAboutData = async () => {
+    setLoading(true)
+    console.log('=== About: Starting fetch ===')
+    console.log('About: Data from props:', data)
+    
+    try {
+      let fetchedServices: Service[] = []
+      let fetchedStats: Stat[] = []
+
+      // 1. Cek apakah data services/stats sudah ada di props (dari homepage fetch)
+      if ((data as any).services && (data as any).services.length > 0) {
+        console.log('About: Services found in props:', (data as any).services)
+        fetchedServices = (data as any).services
+      }
+      
+      if ((data as any).stats && (data as any).stats.length > 0) {
+        console.log('About: Stats found in props:', (data as any).stats)
+        fetchedStats = (data as any).stats
+      }
+
+      // 2. Jika tidak ada di props, fetch dari endpoint terpisah
+      if (fetchedServices.length === 0) {
+        try {
+          console.log('About: Fetching services from /portfolio/services')
+          const servicesResponse = await ApiService.get('/portfolio/services')
+          console.log('About: Services response:', servicesResponse)
+          
+          if (servicesResponse.success && servicesResponse.data) {
+            fetchedServices = servicesResponse.data
+          } else {
+            console.warn('About: Services fetch failed:', servicesResponse)
+          }
+        } catch (error) {
+          console.error('About: Error fetching services:', error)
+        }
+      }
+
+      if (fetchedStats.length === 0) {
+        try {
+          console.log('About: Fetching stats from /portfolio/stats')
+          const statsResponse = await ApiService.get('/portfolio/stats')
+          console.log('About: Stats response:', statsResponse)
+          
+          if (statsResponse.success && statsResponse.data) {
+            fetchedStats = statsResponse.data
+          } else {
+            console.warn('About: Stats fetch failed:', statsResponse)
+          }
+        } catch (error) {
+          console.error('About: Error fetching stats:', error)
+        }
+      }
+
+      // 3. Jika masih kosong, fetch dari /portfolio dengan token
+      if (fetchedServices.length === 0 || fetchedStats.length === 0) {
+        try {
+          const token = localStorage.getItem('adminToken')
+          console.log('About: Fetching full portfolio with token:', token ? 'yes' : 'no')
+          
+          const portfolioResponse = await ApiService.getPortfolio()
+          console.log('About: Full portfolio response:', portfolioResponse)
+          
+          if (portfolioResponse.success && portfolioResponse.data) {
+            if (fetchedServices.length === 0 && portfolioResponse.data.services) {
+              fetchedServices = portfolioResponse.data.services
+            }
+            if (fetchedStats.length === 0 && portfolioResponse.data.stats) {
+              fetchedStats = portfolioResponse.data.stats
+            }
+          }
+        } catch (error) {
+          console.error('About: Error fetching full portfolio:', error)
+        }
+      }
+
+      console.log('About: Final services:', fetchedServices)
+      console.log('About: Final stats:', fetchedStats)
+
+      setServices(fetchedServices)
+      setStats(fetchedStats)
+    } catch (error) {
+      console.error('About: Fatal error:', error)
+      setServices([])
+      setStats([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <section id="about" className="py-20 bg-gray-50 dark:bg-gray-900">
@@ -84,54 +207,49 @@ export default function About({ data }: AboutProps) {
                 What I Do
               </h3>
               <div className="space-y-6">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mr-4">
-                    <FaCode className="text-white text-xl" />
+                {loading ? (
+                  <div className="flex justify-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-white mb-1">Web Development</h4>
-                    <p className="text-indigo-100 text-sm">Building responsive and scalable web applications</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mr-4">
-                    <FaMobileAlt className="text-white text-xl" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-white mb-1">Mobile-First Design</h4>
-                    <p className="text-indigo-100 text-sm">Creating seamless experiences across all devices</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mr-4">
-                    <FaRocket className="text-white text-xl" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-white mb-1">Performance Optimization</h4>
-                    <p className="text-indigo-100 text-sm">Optimizing applications for speed and efficiency</p>
-                  </div>
-                </div>
+                ) : services.length > 0 ? (
+                  services.map((service) => {
+                    const Icon = iconMap[service.icon] || FaCode
+                    return (
+                      <div key={service.id} className="flex items-start">
+                        <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mr-4">
+                          <Icon className="text-white text-xl" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-white mb-1">{service.title}</h4>
+                          <p className="text-indigo-100 text-sm">{service.description}</p>
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <p className="text-indigo-100 text-center">No services added yet</p>
+                )}
               </div>
             </div>
 
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
               <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Quick Stats</h4>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">5+</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Years Exp</p>
+              {loading ? (
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
                 </div>
-                <div>
-                  <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">50+</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Projects</p>
+              ) : stats.length > 0 ? (
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  {stats.map((stat) => (
+                    <div key={stat.id}>
+                      <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{stat.value}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</p>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">30+</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Clients</p>
-                </div>
-              </div>
+              ) : (
+                <p className="text-gray-600 dark:text-gray-400 text-center">No stats added yet</p>
+              )}
             </div>
           </motion.div>
         </div>

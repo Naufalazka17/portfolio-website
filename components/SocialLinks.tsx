@@ -1,6 +1,6 @@
 'use client'
 
-import { FaLinkedin, FaGithub, FaTwitter, FaInstagram, FaFacebook, FaYoutube } from 'react-icons/fa'
+import { FaLinkedin, FaGithub, FaTwitter, FaInstagram, FaFacebook, FaYoutube, FaGlobe, FaLink } from 'react-icons/fa'
 import { PortfolioData } from '@/types'
 
 interface SocialLinksProps {
@@ -8,16 +8,23 @@ interface SocialLinksProps {
 }
 
 const iconMap: { [key: string]: any } = {
-  FaLinkedin,
-  FaGithub,
-  FaTwitter,
-  FaInstagram,
-  FaFacebook,
-  FaYoutube
+  FaLinkedin: FaLinkedin,
+  FaGithub: FaGithub,
+  FaTwitter: FaTwitter,
+  FaInstagram: FaInstagram,
+  FaFacebook: FaFacebook,
+  FaYoutube: FaYoutube,
+  FaGlobe: FaGlobe,
+  FaLink: FaLink,
 }
 
 export default function SocialLinks({ data }: SocialLinksProps) {
   const { socialLinks } = data
+
+  const getIcon = (iconName: string) => {
+    // Cari icon di map, jika tidak ada gunakan FaLink sebagai fallback
+    return iconMap[iconName] || FaLink
+  }
 
   return (
     <section className="py-16 bg-gray-50 dark:bg-gray-900">
@@ -25,9 +32,9 @@ export default function SocialLinks({ data }: SocialLinksProps) {
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
           Connect With Me
         </h2>
-        <div className="flex justify-center space-x-6">
+        <div className="flex flex-wrap justify-center gap-6">
           {socialLinks.map((link) => {
-            const Icon = iconMap[link.icon]
+            const Icon = getIcon(link.icon || `Fa${link.platform}`)
             return (
               <a
                 key={link.id}
