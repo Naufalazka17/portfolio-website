@@ -39,25 +39,17 @@ export default function Navbar() {
       
       if (response.success && response.data && response.data.profile) {
         const profile = response.data.profile
-        console.log('Navbar - Profile name:', profile.name)
-        
-        // Ambil nama lengkap
         const fullName = profile.name || ''
-        
-        // Buat inisial dari nama (huruf pertama setiap kata)
         const nameParts = fullName.split(' ').filter(Boolean)
         let initials = ''
         
         if (nameParts.length >= 2) {
-          // Contoh: "Naufal Azka" -> "NA"
           initials = nameParts[0][0] + nameParts[1][0]
         } else if (nameParts.length === 1) {
-          // Contoh: "Naufal" -> "N"
           initials = nameParts[0][0]
         }
         
         setLogoText(initials.toUpperCase())
-        console.log('Navbar - Logo text:', initials.toUpperCase())
       }
     } catch (error) {
       console.error('Error fetching profile for navbar:', error)
@@ -93,28 +85,28 @@ export default function Navbar() {
   ]
 
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 overflow-x-hidden ${
+    <nav className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 ${
       scrolled 
         ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg' 
         : 'bg-white dark:bg-gray-900'
     }`}>
-      <div className="max-w-full mx-auto px-3 sm:px-4 lg:px-6">
-        <div className="flex justify-between items-center h-14 md:h-16">
-          {/* Logo - Inisial Nama */}
+      <div className="w-full px-3 sm:px-4">
+        <div className="flex items-center justify-between h-12 md:h-14">
+          {/* Logo */}
           <Link 
             href="/" 
-            className="text-xl md:text-2xl font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors shrink-0"
+            className="text-lg md:text-xl font-bold text-indigo-600 dark:text-indigo-400 shrink-0 min-w-[40px]"
           >
             {logoText || 'NA'}
           </Link>
 
-          {/* Desktop Menu - hanya tampil di lg ke atas */}
+          {/* Desktop Menu - hanya lg ke atas */}
           <div className="hidden lg:flex items-center space-x-1 flex-1 justify-center">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-2 xl:px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`px-2 xl:px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                   pathname === item.href
                     ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30'
                     : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -125,57 +117,57 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Desktop Actions - hanya tampil di lg ke atas */}
-          <div className="hidden lg:flex items-center space-x-2 shrink-0">
+          {/* Desktop Actions */}
+          <div className="hidden lg:flex items-center gap-1.5 shrink-0">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               aria-label="Toggle theme"
             >
-              {theme === 'light' ? <FaMoon /> : <FaSun />}
+              {theme === 'light' ? <FaMoon size={16} /> : <FaSun size={16} />}
             </button>
 
             {isLoggedIn ? (
               <>
                 <Link
                   href="/admin"
-                  className="bg-indigo-600 text-white px-3 xl:px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+                  className="bg-indigo-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
                 >
                   Dashboard
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="bg-red-600 text-white px-3 xl:px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition-colors flex items-center whitespace-nowrap"
+                  className="bg-red-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-red-700 transition-colors flex items-center whitespace-nowrap"
                 >
-                  <FaSignOutAlt className="mr-1" />
+                  <FaSignOutAlt className="mr-1 text-xs" />
                   Logout
                 </button>
               </>
             ) : (
               <Link
                 href="/login"
-                className="bg-indigo-600 text-white px-3 xl:px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+                className="bg-indigo-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
               >
                 Login
               </Link>
             )}
           </div>
 
-          {/* Mobile Actions - tampil di bawah lg */}
-          <div className="lg:hidden flex items-center space-x-1 shrink-0">
+          {/* Mobile Actions */}
+          <div className="lg:hidden flex items-center gap-1 shrink-0">
             <button
               onClick={toggleTheme}
-              className="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+              className="p-1.5 text-gray-700 dark:text-gray-300"
               aria-label="Toggle theme"
             >
-              {theme === 'light' ? <FaMoon size={16} /> : <FaSun size={16} />}
+              {theme === 'light' ? <FaMoon size={14} /> : <FaSun size={14} />}
             </button>
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="p-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none"
+              className="p-1.5 text-gray-700 dark:text-gray-300"
               aria-label="Toggle menu"
             >
-              {isOpen ? <FaTimes size={18} /> : <FaBars size={18} />}
+              {isOpen ? <FaTimes size={16} /> : <FaBars size={16} />}
             </button>
           </div>
         </div>
@@ -183,16 +175,16 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="lg:hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 shadow-lg max-h-[calc(100vh-56px)] overflow-y-auto">
-          <div className="px-4 py-3 space-y-1">
+        <div className="lg:hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 shadow-lg">
+          <div className="px-4 py-2 space-y-0.5">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`block px-3 py-2.5 rounded-md text-base font-medium transition-colors ${
+                className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   pathname === item.href
                     ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400'
                 }`}
                 onClick={() => setIsOpen(false)}
               >
@@ -200,19 +192,19 @@ export default function Navbar() {
               </Link>
             ))}
             
-            <div className="pt-3 mt-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
+            <div className="pt-2 mt-2 border-t border-gray-100 dark:border-gray-800 space-y-1.5">
               {isLoggedIn ? (
                 <>
                   <Link
                     href="/admin"
-                    className="block w-full bg-indigo-600 text-white px-3 py-2.5 rounded-md text-base font-medium hover:bg-indigo-700 transition-colors text-center"
+                    className="block w-full bg-indigo-600 text-white px-3 py-2 rounded-md text-sm font-medium text-center"
                     onClick={() => setIsOpen(false)}
                   >
                     Dashboard
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="block w-full bg-red-600 text-white px-3 py-2.5 rounded-md text-base font-medium hover:bg-red-700 transition-colors text-center"
+                    className="block w-full bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium text-center"
                   >
                     Logout
                   </button>
@@ -220,7 +212,7 @@ export default function Navbar() {
               ) : (
                 <Link
                   href="/login"
-                  className="block w-full bg-indigo-600 text-white px-3 py-2.5 rounded-md text-base font-medium hover:bg-indigo-700 transition-colors text-center"
+                  className="block w-full bg-indigo-600 text-white px-3 py-2 rounded-md text-sm font-medium text-center"
                   onClick={() => setIsOpen(false)}
                 >
                   Login
