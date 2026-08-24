@@ -11,7 +11,7 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [logoText, setLogoText] = useState('P')
+  const [logoText, setLogoText] = useState('')
   const pathname = usePathname()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
@@ -25,6 +25,7 @@ export default function Navbar() {
   }, [])
 
   useEffect(() => {
+    // Check login status
     const token = localStorage.getItem('adminToken')
     setIsLoggedIn(!!token)
   }, [pathname])
@@ -39,6 +40,7 @@ export default function Navbar() {
       
       if (response.success && response.data && response.data.profile) {
         const profile = response.data.profile
+        // Buat logo text dari inisial nama
         const initials = profile.name
           .split(' ')
           .map((word: string) => word[0])
@@ -68,7 +70,7 @@ export default function Navbar() {
     localStorage.removeItem('adminToken')
     localStorage.removeItem('adminUsername')
     setIsLoggedIn(false)
-    setIsOpen(false) // Close mobile menu
+    setIsOpen(false)
     router.push('/')
   }
 
@@ -89,15 +91,12 @@ export default function Navbar() {
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-14 md:h-16">
-          {/* Logo - Kiri */}
-          <Link 
-            href="/" 
-            className="text-xl md:text-2xl font-bold text-indigo-600 dark:text-indigo-400 shrink-0"
-          >
-            {logoText}
+          {/* Logo */}
+          <Link href="/" className="text-xl md:text-2xl font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors shrink-0">
+            {logoText || 'P'}
           </Link>
 
-          {/* Desktop Menu - Tengah */}
+          {/* Desktop Menu - hanya tampil di lg ke atas */}
           <div className="hidden lg:flex items-center space-x-1">
             {navItems.map((item) => (
               <Link
@@ -114,7 +113,7 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Desktop Actions - Kanan */}
+          {/* Desktop Actions - hanya tampil di lg ke atas */}
           <div className="hidden lg:flex items-center space-x-2">
             <button
               onClick={toggleTheme}
@@ -150,7 +149,7 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Actions */}
+          {/* Mobile Actions - tampil di bawah lg */}
           <div className="lg:hidden flex items-center space-x-1">
             <button
               onClick={toggleTheme}

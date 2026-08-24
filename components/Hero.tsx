@@ -30,31 +30,46 @@ export default function Hero({ data }: HeroProps) {
     setAvatarError(false)
     
     try {
-      // Coba fetch dari endpoint
-      const response = await ApiService.get('/portfolio/avatar')
+      // Coba tanpa token dulu (untuk public endpoint)
+      let response = await ApiService.get('/portfolio/avatar')
       
-      console.log('Hero - Avatar response:', response)
+      // Jika gagal, coba dengan token dari localStorage
+      if (!response.success || !response.data) {
+        const token = localStorage.getItem('adminToken') || ''
+        if (token) {
+          response = await ApiService.get('/portfolio/avatar', token)
+        }
+      }
+      
+      console.log('Avatar response:', response)
       
       if (response.success && response.data) {
         const avatarData = response.data
         
-        // Cek berbagai format
+        // Cek berbagai format response
         if (avatarData.file_url || avatarData.url) {
           setAvatarUrl(avatarData.file_url || avatarData.url)
         } else if (avatarData.file_data) {
-          // Jika base64
+          // Jika base64, pastikan tidak ada prefix data:image yang duplikat
           let base64Data = avatarData.file_data
           
           // Jika sudah ada prefix data:image, gunakan langsung
           if (base64Data.startsWith('data:image')) {
             setAvatarUrl(base64Data)
           } else {
+            // Jika belum ada prefix, tambahkan
             const mimeType = avatarData.mime_type || 'image/jpeg'
             setAvatarUrl(`data:${mimeType};base64,${base64Data}`)
           }
+        } else if (avatarData.avatar_url) {
+          setAvatarUrl(avatarData.avatar_url)
+        } else {
+          // Tidak ada data avatar
+          setAvatarError(true)
         }
       } else {
-        // Fallback ke profile.avatar dari props
+        console.log('No avatar data found, using fallback')
+        // Fallback ke profile.avatar dari data utama
         if (profile.avatar && profile.avatar.startsWith('http')) {
           setAvatarUrl(profile.avatar)
         } else {
@@ -63,6 +78,7 @@ export default function Hero({ data }: HeroProps) {
       }
     } catch (error) {
       console.error('Error fetching avatar:', error)
+      // Fallback ke profile.avatar
       if (profile.avatar && profile.avatar.startsWith('http')) {
         setAvatarUrl(profile.avatar)
       } else {
@@ -75,7 +91,17 @@ export default function Hero({ data }: HeroProps) {
 
   const fetchCV = async () => {
     try {
-      const response = await ApiService.get('/portfolio/cv')
+      let response = await ApiService.get('/portfolio/cv')
+      
+      // Jika gagal, coba dengan token
+      if (!response.success || !response.data) {
+        const token = localStorage.getItem('adminToken')
+        if (token) {
+          response = await ApiService.get('/portfolio/cv', token)
+        }
+      }
+      
+      console.log('CV response:', response)
       
       if (response.success && response.data) {
         const cvData = response.data
@@ -101,11 +127,19 @@ export default function Hero({ data }: HeroProps) {
 
     setIsLoadingCV(true)
     try {
-      const response = await ApiService.get('/portfolio/cv')
+      let response = await ApiService.get('/portfolio/cv')
+      
+      if (!response.success || !response.data) {
+        const token = localStorage.getItem('adminToken')
+        if (token) {
+          response = await ApiService.get('/portfolio/cv', token)
+        }
+      }
       
       if (response.success && response.data) {
         const cvData = response.data
         
+        // Jika ada file_data (base64)
         if (cvData.file_data) {
           const byteCharacters = atob(cvData.file_data)
           const byteNumbers = new Array(byteCharacters.length)
@@ -126,6 +160,7 @@ export default function Hero({ data }: HeroProps) {
           return
         }
         
+        // Jika ada URL
         if (cvData.url || cvData.file_url) {
           const url = cvData.url || cvData.file_url
           setCvUrl(url)
@@ -212,7 +247,7 @@ export default function Hero({ data }: HeroProps) {
                 />
               ) : (
                 <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-2xl">
-                  <span className="text-4xl md:text-6xl font-bold">
+                  <span className="text-3xl md:text-6xl font-bold">
                     {profile.name.split(' ').map(n => n[0]).join('')}
                   </span>
                 </div>
