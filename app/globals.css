@@ -14,16 +14,28 @@
   --foreground: #ededed;
 }
 
-body {
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
   background-color: var(--background);
   color: var(--foreground);
-  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body {
+  width: 100%;
+  min-height: 100vh;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -36,7 +48,7 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: #6366f1;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -51,19 +63,13 @@ body {
   overflow: hidden;
 }
 
-/* Smooth transitions */
-* {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-duration: 200ms;
-  transition-timing-function: ease-in-out;
+/* Fix untuk navbar dan hero overflow */
+main {
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
-/* Focus styles */
-*:focus {
-  outline: none;
-}
-
-*:focus-visible {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
+section {
+  overflow-x: hidden;
+  max-width: 100%;
 }
