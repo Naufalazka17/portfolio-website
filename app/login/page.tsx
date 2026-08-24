@@ -20,21 +20,26 @@ export default function LoginPage() {
     setError('')
 
     try {
+      console.log('Login attempt:', { username, password })
+      
       const response = await ApiService.login(username, password)
+      console.log('Login response:', response)
 
-      if (response.success) {
+      if (response.success && response.data) {
         const { token, user } = response.data
         
         localStorage.setItem('adminToken', token)
-        localStorage.setItem('adminUsername', user.username || username)
+        localStorage.setItem('adminUsername', user?.username || username)
         
+        console.log('Login successful, redirecting...')
         router.push('/admin')
       } else {
+        console.error('Login failed:', response)
         setError(response.message || 'Invalid username or password')
       }
     } catch (err) {
-      setError('Login failed. Please try again.')
       console.error('Login error:', err)
+      setError('Login failed. Please try again.')
     } finally {
       setIsLoading(false)
     }
