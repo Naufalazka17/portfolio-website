@@ -173,27 +173,28 @@ export default function Hero({ data }: HeroProps) {
   }
 
   return (
-    <section className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-20">
+    <section className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-12 md:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
+            className="order-2 md:order-1 text-center md:text-left"
           >
-            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            <h1 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               Hi, I'm {profile.name}
             </h1>
-            <h2 className="text-3xl text-blue-600 dark:text-blue-400 font-semibold mb-6">
+            <h2 className="text-2xl md:text-3xl text-blue-600 dark:text-blue-400 font-semibold mb-4 md:mb-6">
               {profile.title}
             </h2>
-            <p className="text-lg text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">
+            <p className="text-base md:text-lg text-gray-700 dark:text-gray-300 mb-6 md:mb-8 leading-relaxed">
               {profile.bio}
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center md:justify-start">
               <Link
                 href="/contact"
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-flex items-center"
+                className="bg-blue-600 text-white px-6 md:px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-flex items-center justify-center"
               >
                 Contact Me
               </Link>
@@ -201,7 +202,7 @@ export default function Hero({ data }: HeroProps) {
               <button
                 onClick={handleDownloadCV}
                 disabled={isLoadingCV}
-                className="bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-2 border-blue-600 dark:border-blue-400 px-8 py-3 rounded-lg font-medium hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors inline-flex items-center disabled:opacity-50"
+                className="bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-2 border-blue-600 dark:border-blue-400 px-6 md:px-8 py-3 rounded-lg font-medium hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors inline-flex items-center justify-center disabled:opacity-50"
               >
                 {isLoadingCV ? 'Loading...' : (
                   <>
@@ -217,14 +218,14 @@ export default function Hero({ data }: HeroProps) {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
-            className="flex justify-center"
+            className="order-1 md:order-2 flex justify-center"
           >
-            <div className="relative w-64 h-64 md:w-80 md:h-80">
+            <div className="relative w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-80 lg:h-80">
               <div className="absolute inset-0 bg-indigo-600 rounded-full opacity-10"></div>
               
               {avatarLoading ? (
                 <div className="w-full h-full rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                  <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-indigo-600"></div>
                 </div>
               ) : avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -233,14 +234,13 @@ export default function Hero({ data }: HeroProps) {
                   alt={profile.name}
                   className="w-full h-full rounded-full object-cover shadow-2xl"
                   onError={(e) => {
-                    // Fallback jika gambar gagal dimuat
-                    const target = e.target as HTMLImageElement
-                    target.style.display = 'none'
+                    // Jangan hide avatar, biarkan tetap tampil
+                    console.log('Avatar image failed to load')
                   }}
                 />
               ) : (
-                <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-6xl font-bold shadow-2xl">
-                  {profile.name.split(' ').map(n => n[0]).join('')}
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-2xl">
+                  <FaUser className="w-16 h-16 md:w-24 md:h-24 text-white/50" />
                 </div>
               )}
             </div>
