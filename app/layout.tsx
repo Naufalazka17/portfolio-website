@@ -4,6 +4,7 @@ import './globals.css'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import ThemeProvider from '@/components/ThemeProvider'
+import ApiService from '@/services/api'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,11 +19,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
-      <body className={`${inter.className} bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen overflow-x-hidden w-full max-w-full`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors duration-300`}>
         <ThemeProvider>
           <Navbar />
-          <main className="min-h-screen w-full max-w-full overflow-x-hidden">{children}</main>
+          <main className="min-h-screen">{children}</main>
           <Footer />
         </ThemeProvider>
       </body>
